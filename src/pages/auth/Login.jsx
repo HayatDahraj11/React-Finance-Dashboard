@@ -1,31 +1,41 @@
 // src/pages/auth/Login.jsx
 import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useNavigate, Link } from 'react-router-dom';  // Added Link import
+import { useNavigate, Link } from 'react-router-dom';
 
-const Login = ({ onLoginSuccess }) => {  // Added onLoginSuccess prop
+const Login = ({ onLoginSuccess }) => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, getUserProfile } = useAuth(); // Added getUserProfile
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false); // Added loading state
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    
+    setIsLoading(true);
+
     try {
       const success = await login(formData.email, formData.password);
       if (success) {
-        onLoginSuccess(); // Call the prop function
-        navigate('/dashboard');
+        // Get user profile after successful login
+        const userProfile = await getUserProfile();
+        if (userProfile) {
+          onLoginSuccess();
+          navigate('/dashboard');
+        } else {
+          setError('Failed to load user profile');
+        }
       } else {
-        setError('Invalid credentials');
+        setError('Invalid email or password');
       }
     } catch (err) {
-      setError('An error occurred during login');
+      setError('An error occurred during login. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -71,6 +81,7 @@ const Login = ({ onLoginSuccess }) => {  // Added onLoginSuccess prop
                 borderRadius: '4px'
               }}
               required
+              disabled={isLoading}
             />
           </div>
           <div style={{ marginBottom: '15px' }}>
@@ -86,6 +97,7 @@ const Login = ({ onLoginSuccess }) => {  // Added onLoginSuccess prop
                 borderRadius: '4px'
               }}
               required
+              disabled={isLoading}
             />
           </div>
           <button
@@ -97,14 +109,22 @@ const Login = ({ onLoginSuccess }) => {  // Added onLoginSuccess prop
               color: 'white',
               border: 'none',
               borderRadius: '4px',
-              cursor: 'pointer'
+              cursor: isLoading ? 'not-allowed' : 'pointer',
+              opacity: isLoading ? 0.7 : 1
             }}
+            disabled={isLoading}
           >
-            Login
+            {isLoading ? 'Logging in...' : 'Login'}
           </button>
           
           <div style={{ marginTop: '15px', textAlign: 'center' }}>
-            <Link to="/register" style={{ color: '#1877f2', textDecoration: 'none' }}>
+            <Link 
+              to="/register" 
+              style={{ 
+                color: '#1877f2', 
+                textDecoration: 'none'
+              }}
+            >
               Don't have an account? Register
             </Link>
           </div>
