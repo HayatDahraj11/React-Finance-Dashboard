@@ -4,6 +4,20 @@ import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import { useState } from 'react';
 
+// Temporary Dashboard component
+const Dashboard = () => {
+  return (
+    <div style={{
+      padding: '20px',
+      maxWidth: '1200px',
+      margin: '0 auto'
+    }}>
+      <h1>Welcome to Dashboard</h1>
+      <p>Your financial management dashboard is coming soon!</p>
+    </div>
+  );
+};
+
 function App() {
   // This state will help us manage authentication status
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -12,37 +26,44 @@ function App() {
     <Router>
       <Routes>
         {/* Public routes - accessible without authentication */}
-        <Route 
-          path="/login" 
+        <Route
+          path="/login"
           element={
             !isAuthenticated ? 
-            <Login onLoginSuccess={() => setIsAuthenticated(true)} /> : 
-            <Navigate to="/dashboard" />
-          } 
-        />
-        <Route 
-          path="/register" 
-          element={
-            !isAuthenticated ? 
-            <Register /> : 
-            <Navigate to="/dashboard" />
-          } 
+              <Login onLoginSuccess={() => setIsAuthenticated(true)} /> : 
+              <Navigate to="/dashboard" />
+          }
         />
         
+        <Route
+          path="/register"
+          element={
+            !isAuthenticated ? 
+              <Register /> : 
+              <Navigate to="/dashboard" />
+          }
+        />
+
         {/* Protected routes - need authentication */}
-        <Route 
-          path="/dashboard" 
+        <Route
+          path="/dashboard"
           element={
             isAuthenticated ? 
-            <div>Dashboard (coming soon)</div> : 
-            <Navigate to="/login" />
-          } 
+              <Dashboard /> : 
+              <Navigate to="/login" />
+          }
         />
-        
+
         {/* Default route */}
-        <Route 
-          path="/" 
-          element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} />} 
+        <Route
+          path="/"
+          element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} />}
+        />
+
+        {/* Catch all route for undefined paths */}
+        <Route
+          path="*"
+          element={<Navigate to="/" />}
         />
       </Routes>
     </Router>

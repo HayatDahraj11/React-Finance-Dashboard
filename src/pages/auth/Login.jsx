@@ -1,9 +1,9 @@
 // src/pages/auth/Login.jsx
 import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';  // Added Link import
 
-const Login = () => {
+const Login = ({ onLoginSuccess }) => {  // Added onLoginSuccess prop
   const navigate = useNavigate();
   const { login } = useAuth();
   const [formData, setFormData] = useState({
@@ -19,6 +19,7 @@ const Login = () => {
     try {
       const success = await login(formData.email, formData.password);
       if (success) {
+        onLoginSuccess(); // Call the prop function
         navigate('/dashboard');
       } else {
         setError('Invalid credentials');
@@ -46,7 +47,6 @@ const Login = () => {
       }}>
         <h2 style={{ textAlign: 'center', marginBottom: '20px' }}>Login</h2>
         
-        {/* Error message display */}
         {error && (
           <div style={{
             color: 'red',
@@ -102,6 +102,12 @@ const Login = () => {
           >
             Login
           </button>
+          
+          <div style={{ marginTop: '15px', textAlign: 'center' }}>
+            <Link to="/register" style={{ color: '#1877f2', textDecoration: 'none' }}>
+              Don't have an account? Register
+            </Link>
+          </div>
         </form>
       </div>
     </div>
