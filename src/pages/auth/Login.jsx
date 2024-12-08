@@ -3,15 +3,15 @@ import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 
-const Login = ({ onLoginSuccess }) => {
+const Login = () => {
   const navigate = useNavigate();
-  const { login, getUserProfile } = useAuth(); // Added getUserProfile
+  const { login } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
   const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false); // Added loading state
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -21,19 +21,12 @@ const Login = ({ onLoginSuccess }) => {
     try {
       const success = await login(formData.email, formData.password);
       if (success) {
-        // Get user profile after successful login
-        const userProfile = await getUserProfile();
-        if (userProfile) {
-          onLoginSuccess();
-          navigate('/dashboard');
-        } else {
-          setError('Failed to load user profile');
-        }
+        navigate('/dashboard');
       } else {
-        setError('Invalid email or password');
+        setError('Invalid credentials');
       }
     } catch (err) {
-      setError('An error occurred during login. Please try again.');
+      setError('An error occurred. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -55,7 +48,7 @@ const Login = ({ onLoginSuccess }) => {
         width: '100%',
         maxWidth: '400px'
       }}>
-        <h2 style={{ textAlign: 'center', marginBottom: '20px' }}>Login</h2>
+        <h2 style={{ textAlign: 'center', marginBottom: '20px' }}>Financial Manager Login</h2>
         
         {error && (
           <div style={{
@@ -84,6 +77,7 @@ const Login = ({ onLoginSuccess }) => {
               disabled={isLoading}
             />
           </div>
+
           <div style={{ marginBottom: '15px' }}>
             <input
               type="password"
@@ -100,6 +94,7 @@ const Login = ({ onLoginSuccess }) => {
               disabled={isLoading}
             />
           </div>
+
           <button
             type="submit"
             style={{
@@ -116,15 +111,9 @@ const Login = ({ onLoginSuccess }) => {
           >
             {isLoading ? 'Logging in...' : 'Login'}
           </button>
-          
+
           <div style={{ marginTop: '15px', textAlign: 'center' }}>
-            <Link 
-              to="/register" 
-              style={{ 
-                color: '#1877f2', 
-                textDecoration: 'none'
-              }}
-            >
+            <Link to="/register" style={{ color: '#1877f2', textDecoration: 'none' }}>
               Don't have an account? Register
             </Link>
           </div>

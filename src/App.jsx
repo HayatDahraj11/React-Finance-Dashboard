@@ -1,72 +1,50 @@
 // src/App.jsx
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
-import { useState } from 'react';
-
-// Temporary Dashboard component
-const Dashboard = () => {
-  return (
-    <div style={{
-      padding: '20px',
-      maxWidth: '1200px',
-      margin: '0 auto'
-    }}>
-      <h1>Welcome to Dashboard</h1>
-      <p>Your financial management dashboard is coming soon!</p>
-    </div>
-  );
-};
+import ProtectedRoute from './components/ProtectedRoute';
+import Dashboard from './pages/dashboard/Dashboard';
 
 function App() {
-  // This state will help us manage authentication status
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
   return (
-    <Router>
-      <Routes>
-        {/* Public routes - accessible without authentication */}
-        <Route
-          path="/login"
-          element={
-            !isAuthenticated ? 
-              <Login onLoginSuccess={() => setIsAuthenticated(true)} /> : 
-              <Navigate to="/dashboard" />
-          }
-        />
-        
-        <Route
-          path="/register"
-          element={
-            !isAuthenticated ? 
-              <Register /> : 
-              <Navigate to="/dashboard" />
-          }
-        />
+    <AuthProvider>
+      <Router>
+        <Routes>
+          {/* Public routes */}
+          <Route
+            path="/login"
+            element={<Login />}
+          />
+          <Route
+            path="/register"
+            element={<Register />}
+          />
 
-        {/* Protected routes - need authentication */}
-        <Route
-          path="/dashboard"
-          element={
-            isAuthenticated ? 
-              <Dashboard /> : 
-              <Navigate to="/login" />
-          }
-        />
+          {/* Protected routes */}
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
 
-        {/* Default route */}
-        <Route
-          path="/"
-          element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} />}
-        />
+          {/* Default route */}
+          <Route
+            path="/"
+            element={<Navigate to="/dashboard" />}
+          />
 
-        {/* Catch all route for undefined paths */}
-        <Route
-          path="*"
-          element={<Navigate to="/" />}
-        />
-      </Routes>
-    </Router>
+          {/* Catch all route */}
+          <Route
+            path="*"
+            element={<Navigate to="/" />}
+          />
+        </Routes>
+      </Router>
+    </AuthProvider>
   );
 }
 

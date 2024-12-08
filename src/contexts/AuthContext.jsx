@@ -4,7 +4,7 @@ import { createContext, useState, useContext } from 'react';
 const AuthContext = createContext(null);
 
 // You can store this in an environment variable later
-const API_URL = 'http://localhost:5000/api';
+const API_URL = 'http://localhost:5001/api';
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
