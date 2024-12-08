@@ -24,6 +24,15 @@ app.use((req, res, next) => {
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/dashboard', require('./routes/dashboard'));
 
+
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/transactions', require('./routes/api/transactions'));
+app.use('/api/categories', require('./routes/api/categories'));
+app.use('/api/budget', require('./routes/api/budget'));
+app.use('/api/savings', require('./routes/api/savings'));
+
+
+
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
