@@ -5,17 +5,19 @@ const auth = require('../middleware/auth');
 
 router.get('/', auth, async (req, res) => {
     try {
+        // Only accessible with valid token
         res.json({
-            msg: "Protected Dashboard Data",
-            userData: {
-                userId: req.user.id,
-                timestamp: new Date(),
-                access: "granted"
+            msg: "Authenticated Dashboard Access",
+            user: {
+                id: req.user.id,
+                accessTime: new Date().toISOString()
             }
         });
-    } catch (err) {
-        console.error('Dashboard error:', err);
-        res.status(500).json({ msg: 'Server Error' });
+    } catch (error) {
+        console.error('Dashboard route error:', error);
+        res.status(500).json({ 
+            msg: 'Server error in dashboard' 
+        });
     }
 });
 
