@@ -76,19 +76,20 @@ const Login = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const { login } = useAuth();
+    
+    // State management
     const [pageLoading, setPageLoading] = useState(true);
-    const [formData, setFormData] = useState({
-        email: '',
-        password: ''
-    });
+    const [formData, setFormData] = useState({ email: '', password: '' });
     const [error, setError] = useState('');
-    const [successMessage, setSuccessMessage] = useState(
-        location.state?.message || ''
-    );
+    const [successMessage, setSuccessMessage] = useState(location.state?.message || '');
     const [isLoading, setIsLoading] = useState(false);
+    
+    // UI interaction states
+    const [isEmailHovered, setIsEmailHovered] = useState(false);
+    const [isPasswordHovered, setIsPasswordHovered] = useState(false);
+    const [isButtonHovered, setIsButtonHovered] = useState(false);
 
     useEffect(() => {
-        // Show loading screen for 1.5 seconds
         const timer = setTimeout(() => setPageLoading(false), 1500);
         return () => clearTimeout(timer);
     }, []);
@@ -118,57 +119,69 @@ const Login = () => {
     return (
         <div style={{
             minHeight: '100vh',
+            width: '100vw',
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            backgroundColor: '#1a1f2b',
-            backgroundImage: 'linear-gradient(135deg, #1a1f2b 0%, #2a3442 100%)',
-            position: 'relative',
-            overflow: 'hidden',
-            transition: 'all 0.3s ease'
+            background: 'linear-gradient(-45deg, #1a1f2b, #2c3e50, #2980b9, #3498db)',
+            backgroundSize: '400% 400%',
+            animation: 'gradient 15s ease infinite',
+            padding: '20px',
+            boxSizing: 'border-box'
         }}>
-            {/* Animated background elements */}
             <div style={{
                 position: 'absolute',
                 width: '100%',
                 height: '100%',
-                background: 'radial-gradient(circle, transparent 20%, #1a1f2b 20%, #1a1f2b 80%, transparent 80%, transparent), radial-gradient(circle, transparent 20%, #1a1f2b 20%, #1a1f2b 80%, transparent 80%, transparent) 50px 50px',
-                backgroundSize: '100px 100px',
-                animation: 'fadeInBackground 3s ease-out',
-                opacity: 0.1
+                background: `
+                    radial-gradient(circle at 20% 30%, rgba(52, 152, 219, 0.05) 0%, transparent 50%),
+                    radial-gradient(circle at 80% 70%, rgba(41, 128, 185, 0.05) 0%, transparent 50%)
+                `,
+                backgroundSize: '100% 100%',
+                opacity: 0.6,
+                animation: 'float 10s ease-in-out infinite'
             }} />
 
             <div style={{
-                padding: '30px',
-                backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                borderRadius: '15px',
-                boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
                 width: '100%',
-                maxWidth: '400px',
+                maxWidth: '420px',
+                backgroundColor: 'rgba(255, 255, 255, 0.97)',
+                borderRadius: '20px',
+                boxShadow: '0 20px 40px rgba(0,0,0,0.3), 0 0 100px rgba(52,152,219,0.1)',
+                padding: '35px',
+                margin: '20px',
                 transform: 'translateY(0)',
-                transition: 'all 0.3s ease',
-                animation: 'slideUp 0.5s ease-out'
+                transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                position: 'relative',
+                backdropFilter: 'blur(10px)',
+                animation: 'fadeIn 0.8s ease-out'
             }}>
-                {/* Logo and Branding */}
                 <div style={{
                     textAlign: 'center',
-                    marginBottom: '30px',
-                    animation: 'fadeIn 1s ease-out'
+                    marginBottom: '35px',
+                    position: 'relative',
+                    zIndex: 1
                 }}>
-                    <div style={{
-                        fontSize: '32px',
-                        fontWeight: 'bold',
-                        color: '#2c3e50',
-                        marginBottom: '10px',
-                        background: 'linear-gradient(45deg, #2c3e50, #3498db)',
+                    <h1 style={{
+                        fontSize: '38px',
+                        fontWeight: '800',
+                        margin: '0 0 10px 0',
+                        background: 'linear-gradient(45deg, #2c3e50, #3498db, #2980b9)',
+                        backgroundSize: '200% 200%',
                         WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent'
+                        WebkitTextFillColor: 'transparent',
+                        animation: 'gradient 5s ease infinite',
+                        letterSpacing: '-0.5px',
+                        textShadow: '0 2px 10px rgba(52,152,219,0.1)'
                     }}>
                         WealthGuard Pro
-                    </div>
+                    </h1>
                     <p style={{
                         color: '#7f8c8d',
-                        fontSize: '14px'
+                        fontSize: '16px',
+                        letterSpacing: '0.5px',
+                        margin: '0',
+                        opacity: 0.9
                     }}>
                         Secure Your Financial Future
                     </p>
@@ -177,14 +190,17 @@ const Login = () => {
                 {successMessage && (
                     <div style={{
                         color: '#27ae60',
-                        marginBottom: '15px',
+                        marginBottom: '20px',
                         textAlign: 'center',
-                        padding: '12px',
-                        backgroundColor: '#e8f5e9',
-                        borderRadius: '8px',
-                        animation: 'slideDown 0.3s ease-out',
-                        border: '1px solid #a5d6a7'
+                        padding: '15px',
+                        backgroundColor: 'rgba(39, 174, 96, 0.1)',
+                        borderRadius: '12px',
+                        border: '1px solid rgba(39, 174, 96, 0.2)',
+                        animation: 'slideDown 0.4s ease-out',
+                        transform: 'translateY(0)',
+                        transition: 'all 0.3s ease'
                     }}>
+                        <span role="img" aria-label="success">✅ </span>
                         {successMessage}
                     </div>
                 )}
@@ -192,137 +208,239 @@ const Login = () => {
                 {error && (
                     <div style={{
                         color: '#e74c3c',
-                        marginBottom: '15px',
+                        marginBottom: '20px',
                         textAlign: 'center',
-                        padding: '12px',
-                        backgroundColor: '#fde8e8',
-                        borderRadius: '8px',
+                        padding: '15px',
+                        backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                        borderRadius: '12px',
+                        border: '1px solid rgba(231, 76, 60, 0.2)',
                         animation: 'shake 0.5s ease-out',
-                        border: '1px solid #fab1a0'
+                        transform: 'translateY(0)',
+                        transition: 'all 0.3s ease'
                     }}>
+                        <span role="img" aria-label="error">⚠️ </span>
                         {error}
                     </div>
                 )}
 
                 <form onSubmit={handleSubmit}>
-                    <div style={{ marginBottom: '20px', position: 'relative' }}>
+                    <div style={{ 
+                        marginBottom: '20px', 
+                        position: 'relative',
+                        transition: 'all 0.3s ease' 
+                    }}>
                         <input
                             type="email"
-                            placeholder="Email"
+                            placeholder=""
                             value={formData.email}
                             onChange={(e) => setFormData({...formData, email: e.target.value})}
+                            onFocus={() => setIsEmailHovered(true)}
+                            onBlur={() => setIsEmailHovered(false)}
+                            onMouseEnter={() => setIsEmailHovered(true)}
+                            onMouseLeave={() => setIsEmailHovered(false)}
                             style={{
                                 width: '100%',
-                                padding: '12px',
-                                paddingLeft: '40px',
-                                border: '2px solid #e0e0e0',
-                                borderRadius: '8px',
-                                fontSize: '14px',
+                                padding: '14px',
+                                paddingLeft: '45px',
+                                border: '2px solid',
+                                borderColor: isEmailHovered ? '#3498db' : '#e0e0e0',
+                                borderRadius: '12px',
+                                fontSize: '15px',
+                                backgroundColor: isEmailHovered ? '#f8fafc' : 'white',
                                 transition: 'all 0.3s ease',
                                 outline: 'none',
-                                ':focus': {
-                                    borderColor: '#3498db',
-                                    boxShadow: '0 0 0 3px rgba(52,152,219,0.1)'
-                                }
+                                boxSizing: 'border-box',
+                                boxShadow: isEmailHovered ? '0 2px 8px rgba(52,152,219,0.15)' : 'none'
                             }}
                             required
                             disabled={isLoading}
+                            aria-label="Email Address"
                         />
-                        <i style={{
+                        <label style={{
                             position: 'absolute',
-                            left: '12px',
+                            left: '45px',
+                            top: formData.email ? '0' : '50%',
+                            transform: formData.email ? 'translateY(-50%) scale(0.8)' : 'translateY(-50%)',
+                            color: isEmailHovered ? '#3498db' : '#95a5a6',
+                            transition: 'all 0.3s ease',
+                            backgroundColor: 'white',
+                            padding: '0 5px',
+                            pointerEvents: 'none'
+                        }}>
+                            Email Address
+                        </label>
+                        <span style={{
+                            position: 'absolute',
+                            left: '15px',
                             top: '50%',
                             transform: 'translateY(-50%)',
-                            color: '#95a5a6'
+                            fontSize: '20px',
+                            opacity: isEmailHovered ? 1 : 0.7,
+                            transition: 'all 0.3s ease'
                         }}>
                             📧
-                        </i>
+                        </span>
                     </div>
 
-                    {/* Password input with similar styling */}
-                    <div style={{ marginBottom: '25px', position: 'relative' }}>
+                    <div style={{ 
+                        marginBottom: '25px', 
+                        position: 'relative' 
+                    }}>
                         <input
                             type="password"
-                            placeholder="Password"
+                            placeholder=""
                             value={formData.password}
                             onChange={(e) => setFormData({...formData, password: e.target.value})}
+                            onFocus={() => setIsPasswordHovered(true)}
+                            onBlur={() => setIsPasswordHovered(false)}
+                            onMouseEnter={() => setIsPasswordHovered(true)}
+                            onMouseLeave={() => setIsPasswordHovered(false)}
                             style={{
                                 width: '100%',
-                                padding: '12px',
-                                paddingLeft: '40px',
-                                border: '2px solid #e0e0e0',
-                                borderRadius: '8px',
-                                fontSize: '14px',
+                                padding: '14px',
+                                paddingLeft: '45px',
+                                border: '2px solid',
+                                borderColor: isPasswordHovered ? '#3498db' : '#e0e0e0',
+                                borderRadius: '12px',
+                                fontSize: '15px',
+                                backgroundColor: isPasswordHovered ? '#f8fafc' : 'white',
                                 transition: 'all 0.3s ease',
-                                outline: 'none'
+                                outline: 'none',
+                                boxSizing: 'border-box',
+                                boxShadow: isPasswordHovered ? '0 2px 8px rgba(52,152,219,0.15)' : 'none'
                             }}
                             required
                             disabled={isLoading}
+                            aria-label="Password"
                         />
-                        <i style={{
+                        <label style={{
                             position: 'absolute',
-                            left: '12px',
+                            left: '45px',
+                            top: formData.password ? '0' : '50%',
+                            transform: formData.password ? 'translateY(-50%) scale(0.8)' : 'translateY(-50%)',
+                            color: isPasswordHovered ? '#3498db' : '#95a5a6',
+                            transition: 'all 0.3s ease',
+                            backgroundColor: 'white',
+                            padding: '0 5px',
+                            pointerEvents: 'none'
+                        }}>
+                            Password
+                        </label>
+                        <span style={{
+                            position: 'absolute',
+                            left: '15px',
                             top: '50%',
                             transform: 'translateY(-50%)',
-                            color: '#95a5a6'
+                            fontSize: '20px',
+                            opacity: isPasswordHovered ? 1 : 0.7,
+                            transition: 'all 0.3s ease'
                         }}>
                             🔒
-                        </i>
+                        </span>
                     </div>
 
                     <button
                         type="submit"
+                        onMouseEnter={() => setIsButtonHovered(true)}
+                        onMouseLeave={() => setIsButtonHovered(false)}
                         style={{
                             width: '100%',
-                            padding: '12px',
-                            backgroundColor: '#3498db',
+                            padding: '15px',
+                            backgroundColor: isButtonHovered ? '#2980b9' : '#3498db',
                             color: 'white',
                             border: 'none',
-                            borderRadius: '8px',
-                            cursor: isLoading ? 'not-allowed' : 'pointer',
-                            opacity: isLoading ? 0.7 : 1,
+                            borderRadius: '12px',
                             fontSize: '16px',
-                            fontWeight: '500',
-                            transition: 'all 0.3s ease',
-                            transform: 'translateY(0)',
-                            ':hover': {
-                                backgroundColor: '#2980b9',
-                                transform: 'translateY(-2px)',
-                                boxShadow: '0 5px 15px rgba(52,152,219,0.3)'
-                            }
+                            fontWeight: '600',
+                            cursor: isLoading ? 'not-allowed' : 'pointer',
+                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                            boxShadow: isButtonHovered 
+                                ? '0 8px 15px rgba(52,152,219,0.3)' 
+                                : '0 4px 6px rgba(52,152,219,0.1)',
+                            opacity: isLoading ? 0.7 : 1,
+                            transform: isButtonHovered ? 'translateY(-2px)' : 'translateY(0)',
+                            position: 'relative',
+                            overflow: 'hidden'
                         }}
                         disabled={isLoading}
                     >
-                        {isLoading ? '🔄 Logging in...' : '🚀 Login'}
+                        <span style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px'
+                        }}>
+                            {isLoading ? (
+                                <>
+                                    <span style={{ 
+                                        animation: 'spin 1s linear infinite',
+                                        display: 'inline-block'
+                                    }}>🔄</span>
+                                    Logging in...
+                                </>
+                            ) : (
+                                <>
+                                    <span>🚀</span>
+                                    Login
+                                </>
+                            )}
+                        </span>
                     </button>
 
                     <div style={{
-                        marginTop: '20px',
+                        marginTop: '30px',
                         textAlign: 'center',
-                        animation: 'fadeIn 0.5s ease-out'
+                        padding: '15px',
+                        background: 'linear-gradient(to right, rgba(52,152,219,0.05), rgba(41,128,185,0.05))',
+                        borderRadius: '12px',
+                        border: '1px solid rgba(52,152,219,0.1)',
+                        animation: 'fadeIn 0.5s ease-out',
+                        transform: 'translateY(0)',
+                        transition: 'all 0.3s ease'
                     }}>
                         <Link
                             to="/register"
                             style={{
+                                display: 'inline-block',
                                 color: '#3498db',
                                 textDecoration: 'none',
-                                fontSize: '14px',
+                                fontSize: '15px',
+                                fontWeight: '500',
+                                padding: '8px 16px',
+                                borderRadius: '8px',
                                 transition: 'all 0.3s ease',
-                                ':hover': {
-                                    color: '#2980b9',
-                                    textDecoration: 'underline'
-                                }
+                                background: 'transparent',
+                                position: 'relative'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.background = 'rgba(52,152,219,0.1)';
+                                e.currentTarget.style.transform = 'translateY(-2px)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.background = 'transparent';
+                                e.currentTarget.style.transform = 'translateY(0)';
                             }}
                         >
+                            <span style={{ marginRight: '8px' }}>🌟</span>
                             Don't have an account? Register
                         </Link>
+                    </div>
+
+                    <div style={{
+                        marginTop: '20px',
+                        textAlign: 'center',
+                        fontSize: '13px',
+                        color: '#95a5a6',
+                        opacity: 0.8
+                    }}>
+                        <p style={{ margin: '5px 0' }}>
+                            Secure login • 256-bit encryption
+                        </p>
                     </div>
                 </form>
             </div>
         </div>
     );
 };
-
-
 
 export default Login;
