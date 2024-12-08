@@ -36,31 +36,35 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const register = async (email, password) => {
+// src/contexts/AuthContext.jsx
+const register = async (email, password) => {
     try {
-      const response = await fetch(`${API_URL}/auth/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setUser(data.user);
-        setToken(data.token);
-        localStorage.setItem('token', data.token);
-        return true;
-      } else {
-        throw new Error(data.message || 'Registration failed');
-      }
+        const response = await fetch(`${API_URL}/auth/register`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email, password }),
+        });
+        const data = await response.json();
+        
+        if (response.ok) {
+            // Don't set user and token on registration
+            return { success: true, message: 'Registration successful' };
+        } else {
+            return { 
+                success: false, 
+                message: data.message || 'Registration failed' 
+            };
+        }
     } catch (error) {
-      console.error('Registration error:', error);
-      return false;
+        console.error('Registration error:', error);
+        return { 
+            success: false, 
+            message: 'An error occurred during registration' 
+        };
     }
-  };
+};
 
   const logout = () => {
     setUser(null);

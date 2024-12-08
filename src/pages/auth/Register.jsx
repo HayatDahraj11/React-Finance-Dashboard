@@ -14,39 +14,44 @@ const Register = () => {
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setError('');
-        setIsLoading(true);
+    // src/pages/auth/Register.jsx
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError('');
+  setIsLoading(true);
 
-        // Password validation
-        if (formData.password !== formData.confirmPassword) {
-            setError('Passwords do not match');
-            setIsLoading(false);
-            return;
-        }
+  // Password validation
+  if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
+      setIsLoading(false);
+      return;
+  }
 
-        if (formData.password.length < 6) {
-            setError('Password must be at least 6 characters long');
-            setIsLoading(false);
-            return;
-        }
+  if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      setIsLoading(false);
+      return;
+  }
 
-        try {
-            const success = await register(formData.email, formData.password);
-            if (success) {
-                navigate('/dashboard');
-            } else {
-                setError('Registration failed. Please try again.');
-            }
-        } catch (err) {
-            setError('An error occurred during registration.');
-            console.error('Registration error:', err);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
+  try {
+      const result = await register(formData.email, formData.password);
+      if (result.success) {
+          // Navigate to login with success message
+          navigate('/login', { 
+              state: { 
+                  message: 'Registration successful! Please login with your credentials.' 
+              }
+          });
+      } else {
+          setError(result.message);
+      }
+  } catch (err) {
+      setError('An error occurred during registration.');
+      console.error('Registration error:', err);
+  } finally {
+      setIsLoading(false);
+  }
+};
     return (
         <div style={{
             minHeight: '100vh',
