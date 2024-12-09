@@ -1,259 +1,190 @@
-// backend/controllers/api/budgetController.js
-const Budget = require('../../models/Budget');
+const Saving = require('../../models/Savings');
 const Transaction = require('../../models/Transaction');
-const Category = require('../../models/Category');
 
-const budgetController = {
-    // Create monthly budget
+const savingsController = {
+    // Create savings goal
     create: async (req, res) => {
         try {
-            const { month, totalBudget, categories, alerts } = req.body;
+            const { title, targetAmount, targetDate, categoryImpact } = req.body;
 
-            // Verify all categories exist
-            for (const item of categories) {
-                const categoryExists = await Category.findOne({
-                    _id: item.category,
-                    user: req.user.id
-                });
-                if (!categoryExists) {
-                    return res.status(404).json({ 
-                        msg: 'Category not found',
-                        category: item.category 
-                    });
-                }
-            }
-
-            // Check if budget already exists for this month
-            const existingBudget = await Budget.findOne({
+            const saving = new Saving({
                 user: req.user.id,
-                month: new Date(month)
+                title,
+                targetAmount,
+                targetDate: new Date(targetDate),
+                currentAmount: 0,
+                categoryImpact: categoryImpact || [],
+                status: 'ongoing'
             });
 
-            if (existingBudget) {
-                return res.status(400).json({ msg: 'Budget already exists for this month' });
-            }
-
-            const budget = new Budget({
-                user: req.user.id,
-                month: new Date(month),
-                totalBudget,
-                categories,
-                alerts
-            });
-
-            await budget.save();
-            
-            // Populate category details
-            await budget.populate('categories.category', 'name color');
-            
-            res.json(budget);
+            await saving.save();
+            res.json(saving);
         } catch (error) {
-            console.error('Budget creation error:', error);
+            console.error('Savings creation error:', error);
             res.status(500).json({ msg: 'Server error' });
         }
     },
 
-    // Get all budgets
+    // Get all savings goals
     getAll: async (req, res) => {
         try {
-            const { startDate, endDate } = req.query;
-            let query = { user: req.user.id };
+            const savings = await Saving.find({ user: req.user.id })
+                .populate('categoryImpact.category', 'name color')
+                .sort({ targetDate: 1 });
 
-            if (startDate && endDate) {
-                query.month = {
-                    $gte: new Date(startDate),
-                    $lte: new Date(endDate)
+            // Calculate progress for each savings goal
+            const savingsWithProgress = savings.map(goal => {
+                const progress = (goal.currentAmount / goal.targetAmount) * 100;
+                const daysLeft = Math.ceil((new Date(goal.targetDate) - new Date()) / (1000 * 60 * 60 * 24));
+                
+                return {
+                    ...goal.toObject(),
+                    progress: Math.round(progress * 100) / 100,
+                    daysLeft: daysLeft > 0 ? daysLeft : 0
                 };
-            }
+            });
 
-            const budgets = await Budget.find(query)
-                .populate('categories.category', 'name color')
-                .sort({ month: -1 });
-
-            // Get actual spending for each budget
-            const budgetsWithSpending = await Promise.all(
-                budgets.map(async (budget) => {
-                    const startOfMonth = new Date(budget.month);
-                    const endOfMonth = new Date(budget.month);
-                    endOfMonth.setMonth(endOfMonth.getMonth() + 1);
-                    endOfMonth.setDate(0);
-
-                    const spending = await Transaction.aggregate([
-                        {
-                            $match: {
-                                user: req.user.id,
-                                date: {
-                                    $gte: startOfMonth,
-                                    $lte: endOfMonth
-                                },
-                                type: 'expense'
-                            }
-                        },
-                        {
-                            $group: {
-                                _id: '$category',
-                                totalSpent: { $sum: '$amount' }
-                            }
-                        }
-                    ]);
-
-                    const categoriesWithSpending = budget.categories.map(cat => {
-                        const categorySpending = spending.find(s => 
-                            s._id.toString() === cat.category._id.toString()
-                        );
-                        return {
-                            ...cat.toObject(),
-                            spent: categorySpending ? categorySpending.totalSpent : 0,
-                            remaining: cat.amount - (categorySpending ? categorySpending.totalSpent : 0)
-                        };
-                    });
-
-                    const totalSpent = spending.reduce((acc, curr) => acc + curr.totalSpent, 0);
-
-                    return {
-                        ...budget.toObject(),
-                        categories: categoriesWithSpending,
-                        totalSpent,
-                        remaining: budget.totalBudget - totalSpent
-                    };
-                })
-            );
-
-            res.json(budgetsWithSpending);
+            res.json(savingsWithProgress);
         } catch (error) {
-            console.error('Get budgets error:', error);
+            console.error('Get savings error:', error);
             res.status(500).json({ msg: 'Server error' });
         }
     },
 
-    // Get budget by month
-    getByMonth: async (req, res) => {
+    // Get savings goal by ID
+    getById: async (req, res) => {
         try {
-            const { month } = req.params;
-            const startOfMonth = new Date(month);
-            const endOfMonth = new Date(month);
-            endOfMonth.setMonth(endOfMonth.getMonth() + 1);
-            endOfMonth.setDate(0);
+            const saving = await Saving.findOne({
+                _id: req.params.id,
+                user: req.user.id
+            }).populate('categoryImpact.category', 'name color');
 
-            const budget = await Budget.findOne({
-                user: req.user.id,
-                month: {
-                    $gte: startOfMonth,
-                    $lte: endOfMonth
-                }
-            }).populate('categories.category', 'name color');
-
-            if (!budget) {
-                return res.status(404).json({ msg: 'Budget not found for this month' });
+            if (!saving) {
+                return res.status(404).json({ msg: 'Savings goal not found' });
             }
 
-            // Get actual spending
-            const spending = await Transaction.aggregate([
-                {
-                    $match: {
-                        user: req.user.id,
-                        date: {
-                            $gte: startOfMonth,
-                            $lte: endOfMonth
-                        },
-                        type: 'expense'
-                    }
-                },
-                {
-                    $group: {
-                        _id: '$category',
-                        totalSpent: { $sum: '$amount' },
-                        transactions: { $push: '$$ROOT' }
-                    }
-                }
-            ]);
+            // Calculate progress
+            const progress = (saving.currentAmount / saving.targetAmount) * 100;
+            const daysLeft = Math.ceil((new Date(saving.targetDate) - new Date()) / (1000 * 60 * 60 * 24));
 
-            const categoriesWithSpending = budget.categories.map(cat => {
-                const categorySpending = spending.find(s => 
-                    s._id.toString() === cat.category._id.toString()
-                );
-                return {
-                    ...cat.toObject(),
-                    spent: categorySpending ? categorySpending.totalSpent : 0,
-                    remaining: cat.amount - (categorySpending ? categorySpending.totalSpent : 0),
-                    transactions: categorySpending ? categorySpending.transactions : []
-                };
-            });
-
-            const totalSpent = spending.reduce((acc, curr) => acc + curr.totalSpent, 0);
+            // Get related transactions
+            const transactions = await Transaction.find({
+                user: req.user.id,
+                savingsGoal: saving._id
+            }).sort({ date: -1 });
 
             res.json({
-                ...budget.toObject(),
-                categories: categoriesWithSpending,
-                totalSpent,
-                remaining: budget.totalBudget - totalSpent
+                ...saving.toObject(),
+                progress: Math.round(progress * 100) / 100,
+                daysLeft: daysLeft > 0 ? daysLeft : 0,
+                transactions
             });
         } catch (error) {
-            console.error('Get budget error:', error);
+            console.error('Get savings by ID error:', error);
             res.status(500).json({ msg: 'Server error' });
         }
     },
 
-    // Update budget
+    // Get savings statistics
+    getStats: async (req, res) => {
+        try {
+            const savings = await Saving.find({ user: req.user.id });
+            
+            const stats = {
+                totalGoals: savings.length,
+                totalTargetAmount: savings.reduce((acc, curr) => acc + curr.targetAmount, 0),
+                totalCurrentAmount: savings.reduce((acc, curr) => acc + curr.currentAmount, 0),
+                completedGoals: savings.filter(goal => goal.status === 'completed').length,
+                ongoingGoals: savings.filter(goal => goal.status === 'ongoing').length,
+                failedGoals: savings.filter(goal => goal.status === 'failed').length,
+                upcomingDeadlines: savings.filter(goal => {
+                    const deadline = new Date(goal.targetDate);
+                    const now = new Date();
+                    const thirtyDaysFromNow = new Date();
+                    thirtyDaysFromNow.setDate(now.getDate() + 30);
+                    return deadline <= thirtyDaysFromNow && goal.status === 'ongoing';
+                })
+            };
+
+            // Calculate overall progress
+            stats.overallProgress = stats.totalTargetAmount > 0 
+                ? (stats.totalCurrentAmount / stats.totalTargetAmount) * 100 
+                : 0;
+
+            res.json(stats);
+        } catch (error) {
+            console.error('Get savings stats error:', error);
+            res.status(500).json({ msg: 'Server error' });
+        }
+    },
+
+    // Update savings goal
     update: async (req, res) => {
         try {
-            const { totalBudget, categories, alerts } = req.body;
+            const { title, targetAmount, targetDate, currentAmount, categoryImpact, status, alerts } = req.body;
 
-            // Verify all categories if provided
-            if (categories) {
-                for (const item of categories) {
-                    const categoryExists = await Category.findOne({
-                        _id: item.category,
-                        user: req.user.id
-                    });
-                    if (!categoryExists) {
-                        return res.status(404).json({ 
-                            msg: 'Category not found',
-                            category: item.category 
-                        });
-                    }
-                }
+            // Validate status if provided
+            if (status && !['ongoing', 'completed', 'failed'].includes(status)) {
+                return res.status(400).json({ msg: 'Invalid status value' });
             }
 
-            const budget = await Budget.findOneAndUpdate(
+            const saving = await Saving.findOneAndUpdate(
                 { _id: req.params.id, user: req.user.id },
-                { 
-                    ...(totalBudget && { totalBudget }),
-                    ...(categories && { categories }),
+                {
+                    ...(title && { title }),
+                    ...(targetAmount && { targetAmount }),
+                    ...(targetDate && { targetDate: new Date(targetDate) }),
+                    ...(currentAmount !== undefined && { currentAmount }),
+                    ...(categoryImpact && { categoryImpact }),
+                    ...(status && { status }),
                     ...(alerts && { alerts })
                 },
                 { new: true }
-            ).populate('categories.category', 'name color');
+            ).populate('categoryImpact.category', 'name color');
 
-            if (!budget) {
-                return res.status(404).json({ msg: 'Budget not found' });
+            if (!saving) {
+                return res.status(404).json({ msg: 'Savings goal not found' });
             }
 
-            res.json(budget);
+            // Calculate progress
+            const progress = (saving.currentAmount / saving.targetAmount) * 100;
+            const daysLeft = Math.ceil((new Date(saving.targetDate) - new Date()) / (1000 * 60 * 60 * 24));
+
+            res.json({
+                ...saving.toObject(),
+                progress: Math.round(progress * 100) / 100,
+                daysLeft: daysLeft > 0 ? daysLeft : 0
+            });
         } catch (error) {
-            console.error('Update budget error:', error);
+            console.error('Update savings error:', error);
             res.status(500).json({ msg: 'Server error' });
         }
     },
 
-    // Delete budget
+    // Delete savings goal
     delete: async (req, res) => {
         try {
-            const budget = await Budget.findOneAndDelete({
+            const saving = await Saving.findOneAndDelete({
                 _id: req.params.id,
                 user: req.user.id
             });
 
-            if (!budget) {
-                return res.status(404).json({ msg: 'Budget not found' });
+            if (!saving) {
+                return res.status(404).json({ msg: 'Savings goal not found' });
             }
 
-            res.json({ msg: 'Budget deleted' });
+            // Also delete or update related transactions
+            await Transaction.updateMany(
+                { savingsGoal: req.params.id },
+                { $unset: { savingsGoal: 1 } }
+            );
+
+            res.json({ msg: 'Savings goal deleted' });
         } catch (error) {
-            console.error('Delete budget error:', error);
+            console.error('Delete savings error:', error);
             res.status(500).json({ msg: 'Server error' });
         }
     }
 };
 
-module.exports = budgetController;
+module.exports = savingsController;

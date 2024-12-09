@@ -14,6 +14,11 @@ router.post('/', auth, savingsController.create);
 // @access  Private
 router.get('/', auth, savingsController.getAll);
 
+// @route   GET api/savings/stats
+// @desc    Get savings statistics
+// @access  Private
+router.get('/stats', auth, savingsController.getStats);  // Move this BEFORE /:id route
+
 // @route   GET api/savings/:id
 // @desc    Get savings goal by ID
 // @access  Private
@@ -28,10 +33,5 @@ router.put('/:id', auth, savingsController.update);
 // @desc    Delete savings goal
 // @access  Private
 router.delete('/:id', auth, savingsController.delete);
-
-// @route   GET api/savings/stats
-// @desc    Get savings statistics
-// @access  Private
-router.get('/stats', auth, savingsController.getStats);
 
 module.exports = router;

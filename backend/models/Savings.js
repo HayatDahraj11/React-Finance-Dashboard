@@ -1,4 +1,4 @@
-// backend/models/Saving.js
+// backend/models/Savings.js
 const mongoose = require('mongoose');
 
 const savingSchema = new mongoose.Schema({
