@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
+import 'bootstrap/dist/css/bootstrap.min.css';
 import { useAuth } from '../../contexts/AuthContext';
 import { ExpenseSummary } from '../../../web-project/src/features/analytics/components/ExpenseSummary.jsx';
 import '../../styles/dashboard.css';
+import BudgetOverview from '../../../web-project/src/features/analytics/components/BudgetOverview.jsx';
 
 const Dashboard = () => {
     const { token } = useAuth();
@@ -44,6 +46,7 @@ const Dashboard = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <ExpenseSummary />
+                    <BudgetOverview />
                 </div>
 
                 {dashboardData && (
