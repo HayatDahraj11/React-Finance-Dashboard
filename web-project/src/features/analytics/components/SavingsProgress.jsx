@@ -40,6 +40,7 @@ const SavingsProgress = () => {
   };
 
   return (
+    
     <div className="expense-summary bg-light p-4 rounded shadow">
       <h2 className="text-center text-primary">Savings Progress</h2>
 
@@ -55,12 +56,17 @@ const SavingsProgress = () => {
         </div>
 
         <div className="progress bg-gray-200 rounded-full overflow-hidden mt-4" style={{ height: '10px' }}>
-          <div
-            className="progress-bar bg-primary"
-            style={{ width: `${(savingsData.current / savingsData.goal) * 100}%` }}
-          ></div>
-        </div>
-      </div>
+    <div
+        className="progress-bar bg-primary"
+        style={{
+            width: `${(savingsData.current / savingsData.goal) * 100}%`, /* Fills correctly */
+            margin: 0, /* No additional gap */
+            padding: 0, /* Ensure no padding */
+        }}
+    ></div>
+    </div>
+</div>
+
 
       {/* Line Chart */}
       <div className="chart-container mx-auto" style={{ maxWidth: '300px' }}>
