@@ -15,22 +15,20 @@ export const ExpenseSummary = () => {
   const calculatePercentage = (amount) => (amount / expenses.total) * 100;
 
   return (
-    <div className="expense-summary">
-      <h2>Expense Summary</h2>
-      <div>
-        {Object.keys(expenses.categories).map((category) => (
-          <div key={category} className="expense-item">
-            <span className="category">{category}</span>
-            <span className="amount">${expenses.categories[category]}</span>
-            <div className="progress-bar">
-              <div style={{ width: `${calculatePercentage(expenses.categories[category])}%` }}></div>
+<div className="expense-summary bg-light p-4 rounded shadow">
+    <h2 className="text-center text-primary">Expense Summary</h2>
+    {Object.keys(expenses.categories).map((category) => (
+        <div key={category} className="expense-item d-flex align-items-center justify-content-between my-3">
+            <span className="text-capitalize">{category}</span>
+            <div className="progress flex-grow-1 mx-3" style={{ height: '10px' }}>
+                <div className="progress-bar bg-primary" style={{ width: `${calculatePercentage(expenses.categories[category])}%` }}></div>
             </div>
-          </div>
-        ))}
-      </div>
-      <div className="total-expenses">
+            <span>${expenses.categories[category]}</span>
+        </div>
+    ))}
+    <div className="text-center mt-3 text-secondary">
         <strong>Total Expenses:</strong> ${expenses.total}
-      </div>
     </div>
+</div>
   );
 };

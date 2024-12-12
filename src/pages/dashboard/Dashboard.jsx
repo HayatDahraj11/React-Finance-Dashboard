@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { ExpenseSummary } from '../../../web-project/src/features/analytics/components/ExpenseSummary.jsx';
 import '../../styles/dashboard.css';
 import BudgetOverview from '../../../web-project/src/features/analytics/components/BudgetOverview.jsx';
+import SavingsProgress from '../../../web-project/src/features/analytics/components/SavingsProgress.jsx';
 
 const Dashboard = () => {
     const { token } = useAuth();
@@ -29,28 +30,31 @@ const Dashboard = () => {
 
     return (
         <div>
-            <nav className="navbar">
-                <h1>WealthGuard Pro</h1>
-                <ul>
-                    <li><a href="/dashboard">Dashboard</a></li>
-                    <li><a href="/budget-planner">Budget Planner</a></li>
-                    <li><a href="/expense-manager">Expense Manager</a></li>
-                    <li><a href="/settings">Settings</a></li>
-                </ul>
+            <nav className="navbar navbar-expand-lg navbar-dark bg-dark shadow">
+                <div className="container">
+                    <h1 className="navbar-brand">WealthGuard Pro</h1>
+                    <ul className="navbar-nav ms-auto">
+                        <li className="nav-item"><a className="nav-link" href="/dashboard">Dashboard</a></li>
+                        <li className="nav-item"><a className="nav-link" href="/budget-planner">Budget Planner</a></li>
+                        <li className="nav-item"><a className="nav-link" href="/expense-manager">Expense Manager</a></li>
+                        <li className="nav-item"><a className="nav-link" href="/settings">Settings</a></li>
+                    </ul>
+                </div>
             </nav>
 
-            <div className="dashboard-container">
-                <header className="dashboard-header">
+            <div className="dashboard-container container my-5">
+                <header className="dashboard-header text-center mb-4">
                     <h1>Financial Dashboard</h1>
                 </header>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <ExpenseSummary />
-                    <BudgetOverview />
+                <div className="row g-4">
+                    <div className="col-12 col-lg-4"><ExpenseSummary /></div>
+                    <div className="col-12 col-lg-4"><BudgetOverview /></div>
+                    <div className="col-12 col-lg-4"><SavingsProgress /></div>
                 </div>
 
                 {dashboardData && (
-                    <div>
+                    <div className="mt-4 text-center">
                         <p>Message: {dashboardData.msg}</p>
                         <p>User ID: {dashboardData.user?.id}</p>
                         <p>Access Time: {dashboardData.user?.accessTime}</p>
