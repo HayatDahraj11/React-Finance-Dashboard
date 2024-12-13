@@ -1,10 +1,11 @@
-// src/App.jsx
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import ProtectedRoute from './components/ProtectedRoute';
 import Dashboard from './pages/dashboard/Dashboard';
+import BudgetPlanner from '../src/pages/BudgetPlanner.jsx';
+//features/budget/BudgetPlanner.jsx';
 
 function App() {
   return (
@@ -12,14 +13,8 @@ function App() {
       <Router>
         <Routes>
           {/* Public routes */}
-          <Route
-            path="/login"
-            element={<Login />}
-          />
-          <Route
-            path="/register"
-            element={<Register />}
-          />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
 
           {/* Protected routes */}
           <Route
@@ -30,18 +25,20 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/budget-planner"
+            element={
+              <ProtectedRoute>
+                <BudgetPlanner />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Default route */}
-          <Route
-            path="/"
-            element={<Navigate to="/dashboard" />}
-          />
+          <Route path="/" element={<Navigate to="/dashboard" />} />
 
           {/* Catch all route */}
-          <Route
-            path="*"
-            element={<Navigate to="/" />}
-          />
+          <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </Router>
     </AuthProvider>
