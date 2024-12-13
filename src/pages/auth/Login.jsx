@@ -1,12 +1,10 @@
-// src/pages/auth/Login.jsx
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 
-// First, let's create our animations as a style tag that will be injected into the component
+// LoadingScreen component - preserved exactly as is
 const LoadingScreen = () => {
     useEffect(() => {
-        // Create and inject animations when component mounts
         const style = document.createElement('style');
         style.textContent = `
             @keyframes spin {
@@ -29,8 +27,6 @@ const LoadingScreen = () => {
             }
         `;
         document.head.appendChild(style);
-
-        // Cleanup on unmount
         return () => document.head.removeChild(style);
     }, []);
 
@@ -101,14 +97,16 @@ const Login = () => {
         setIsLoading(true);
 
         try {
-            const success = await login(formData.email, formData.password);
-            if (success) {
+            const result = await login(formData.email, formData.password);
+            
+            if (result.success) {
                 navigate('/dashboard');
             } else {
-                setError('Invalid credentials');
+                setError(result.message || 'Invalid credentials');
             }
         } catch (err) {
             setError('An error occurred. Please try again.');
+            console.error('Login error:', err);
         } finally {
             setIsLoading(false);
         }
@@ -116,6 +114,7 @@ const Login = () => {
 
     if (pageLoading) return <LoadingScreen />;
 
+    // Rest of the component remains exactly the same
     return (
         <div style={{
             minHeight: '100vh',

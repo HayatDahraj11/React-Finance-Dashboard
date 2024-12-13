@@ -1,8 +1,7 @@
-// backend/server.js
 const express = require('express');
 const cors = require('cors');
-require('dotenv').config();
 const mongoose = require('mongoose');
+require('dotenv').config();
 
 const app = express();
 
@@ -18,19 +17,19 @@ mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log('MongoDB Connected'))
     .catch(err => console.log('MongoDB Connection Error:', err));
 
-// Debug middleware
+// Debug middleware for logging
 app.use((req, res, next) => {
     console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
     next();
 });
 
-// Routes
-app.use('/api/auth', require('../backend/middleware/auth'));
-app.use('/api/categories', require('../backend/routes/api/categories'));
-app.use('/api/budget', require('../backend/routes/api/budget'));
-app.use('/api/dashboard', require('../backend/routes/dashboard')); // Add this line
+// Routes - Fix the route imports
+app.use('/api/auth', require('./routes/auth')); // Auth routes should not use auth middleware
+app.use('/api/categories', require('./routes/api/categories'));
+app.use('/api/budget', require('./routes/api/budget'));
+app.use('/api/dashboard', require('./routes/dashboard'));
 
-// Error handling
+// Error handling middleware
 app.use((err, req, res, next) => {
     console.error('Error:', err);
     res.status(500).json({ message: 'Something went wrong!' });

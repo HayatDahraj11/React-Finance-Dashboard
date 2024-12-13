@@ -3,7 +3,6 @@ import { createContext, useState, useContext } from 'react';
 
 const AuthContext = createContext(null);
 
-// You can store this in an environment variable later
 const API_URL = 'http://localhost:5001/api';
 
 export const AuthProvider = ({ children }) => {
@@ -12,59 +11,74 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
+      console.log('Attempting login with:', { email });
+      
       const response = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ email, password }),
+        credentials: 'include'
       });
 
       const data = await response.json();
+      console.log('Login response:', data);
 
-      if (response.ok) {
-        setUser(data.user);
+      if (response.ok && data.token) {
         setToken(data.token);
         localStorage.setItem('token', data.token);
-        return true;
+        
+        // Fetch user data after successful login
+        const userResponse = await fetch(`${API_URL}/auth/profile`, {
+          headers: {
+            'Authorization': `Bearer ${data.token}`
+          }
+        });
+        
+        if (userResponse.ok) {
+          const userData = await userResponse.json();
+          setUser(userData);
+        }
+        
+        return { success: true };
       } else {
         throw new Error(data.message || 'Login failed');
       }
     } catch (error) {
       console.error('Login error:', error);
-      return false;
+      return { 
+        success: false, 
+        message: error.message || 'An error occurred during login' 
+      };
     }
   };
 
-// src/contexts/AuthContext.jsx
-const register = async (email, password) => {
+  const register = async (email, password) => {
     try {
-        const response = await fetch(`${API_URL}/auth/register`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ email, password }),
-        });
-        const data = await response.json();
-        
-        if (response.ok) {
-            // Don't set user and token on registration
-            return { success: true, message: 'Registration successful' };
-        } else {
-            return { 
-                success: false, 
-                message: data.message || 'Registration failed' 
-            };
-        }
+      const response = await fetch(`${API_URL}/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        return { success: true, message: 'Registration successful' };
+      } else {
+        throw new Error(data.message || 'Registration failed');
+      }
     } catch (error) {
-        console.error('Registration error:', error);
-        return { 
-            success: false, 
-            message: 'An error occurred during registration' 
-        };
+      console.error('Registration error:', error);
+      return { 
+        success: false, 
+        message: error.message || 'An error occurred during registration' 
+      };
     }
-};
+  };
 
   const logout = () => {
     setUser(null);
@@ -72,15 +86,14 @@ const register = async (email, password) => {
     localStorage.removeItem('token');
   };
 
-  // Function to check if the user is authenticated
   const checkAuth = async () => {
     const storedToken = localStorage.getItem('token');
     if (storedToken) {
       try {
         const response = await fetch(`${API_URL}/auth/verify`, {
           headers: {
-            'Authorization': `Bearer ${storedToken}`,
-          },
+            'Authorization': `Bearer ${storedToken}`
+          }
         });
 
         if (response.ok) {
@@ -100,30 +113,6 @@ const register = async (email, password) => {
     return false;
   };
 
-  // Function to get user profile
-  const getUserProfile = async () => {
-    if (!token) return null;
-
-    try {
-      const response = await fetch(`${API_URL}/auth/profile`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setUser(data.user);
-        return data.user;
-      } else {
-        throw new Error('Failed to fetch user profile');
-      }
-    } catch (error) {
-      console.error('Profile fetch error:', error);
-      return null;
-    }
-  };
-
   return (
     <AuthContext.Provider 
       value={{ 
@@ -132,8 +121,7 @@ const register = async (email, password) => {
         login, 
         logout, 
         register, 
-        checkAuth, 
-        getUserProfile,
+        checkAuth,
         isAuthenticated: !!token 
       }}
     >
@@ -149,3 +137,5 @@ export const useAuth = () => {
   }
   return context;
 };
+
+export default AuthContext;
