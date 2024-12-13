@@ -42,7 +42,7 @@ const Navbar = () => {
             <li className="nav-item">
               <Link 
                 className={`nav-link ${location.pathname === '/expense-manager' ? 'active' : ''}`} 
-                to="/expense-manager"
+                to="/Expense-Manager"
               >
                 Expense Manager
               </Link>

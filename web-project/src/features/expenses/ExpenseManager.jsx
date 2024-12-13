@@ -1,25 +1,36 @@
 // src/pages/expenses/ExpenseManager.jsx
 import React from 'react';
-import { ExpenseForm, ExpenseList, ExpenseFilters } from '../../features/expenses/components';
+import { ExpenseForm, ExpenseList, ExpenseFilters } from './ExpenseComponents.jsx';
+import Navbar from '../../../../src/pages/dashboard/Navbar.jsx';
+import './ExpenseManager.css';
 
 const ExpenseManager = () => {
   return (
-    <div className="p-6">
-      <header className="mb-6">
-        <h1 className="text-2xl font-bold">Expense Management</h1>
+    <>
+      <Navbar />
+      <div className="expense-manager-container">
+      <header className="expense-header">
+        <h1 className="title">Expense Management</h1>
+        <p className="subtitle">Track, manage, and optimize your expenses effortlessly.</p>
       </header>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
+
+      <div className="expense-content">
+        <div className="expense-list-section">
+          <h2 className="section-title">Your Expenses</h2>
           <ExpenseList />
         </div>
-        <div>
-          <ExpenseForm />
-          <ExpenseFilters />
+        <div className="expense-form-section">
+          <div className="form-wrapper">
+            <h2 className="section-title">Add Expense</h2>
+            <ExpenseForm />
+          </div>
+          <div className="filters-wrapper">
+            <h2 className="section-title">Filter Expenses</h2>
+            <ExpenseFilters />
+          </div>
         </div>
       </div>
     </div>
+    </>
   );
-};
-
-export default ExpenseManager;
+};export default ExpenseManager;

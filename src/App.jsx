@@ -5,7 +5,7 @@ import Register from './pages/auth/Register';
 import ProtectedRoute from './components/ProtectedRoute';
 import Dashboard from './pages/dashboard/Dashboard';
 import BudgetPlanner from '../src/pages/BudgetPlanner.jsx';
-//features/budget/BudgetPlanner.jsx';
+import ExpenseManager from '../web-project/src/features/expenses/ExpenseManager.jsx';
 
 function App() {
   return (
@@ -33,6 +33,15 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/Expense-Manager"
+            element={
+              <ProtectedRoute>
+                <ExpenseManager />
+              </ProtectedRoute>
+            }
+          />
+          
 
           {/* Default route */}
           <Route path="/" element={<Navigate to="/dashboard" />} />

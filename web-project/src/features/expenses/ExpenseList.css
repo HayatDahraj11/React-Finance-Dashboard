@@ -1,0 +1,35 @@
+/* expenseList.css */
+.expense-list {
+    background: #ffffff;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .list-title {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    color: #007bff;
+  }
+  
+  .expense-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.8rem 0;
+    border-bottom: 1px solid #ddd;
+  }
+  
+  .expense-title {
+    font-weight: bold;
+    color: #333;
+  }
+  
+  .expense-category {
+    color: #555;
+  }
+  
+  .expense-amount {
+    font-weight: bold;
+    color: #007bff;
+  }
+  
