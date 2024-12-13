@@ -1,59 +1,41 @@
-// src/features/analytics/components/BudgetOverview.jsx
+// BudgetOverview.jsx
 import React from 'react';
 import { Doughnut, Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, BarElement, CategoryScale, LinearScale } from 'chart.js';
 
-// Register chart components with Chart.js
 ChartJS.register(ArcElement, Tooltip, Legend, BarElement, CategoryScale, LinearScale);
 
-export const BudgetOverview = () => {
-  // Dummy data for budget overview
-  const budgetData = {
-    totalBudget: 2000,
-    spent: 1250,
-    remaining: 750,
-    categories: {
-      food: 400,
-      entertainment: 200,
-      bills: 400,
-      transportation: 150,
-      savings: 100,
-    },
-  };
+export const BudgetOverview = ({ data }) => {
+  if (!data) {
+    return <div className="text-center">Loading budget data...</div>;
+  }
+
+  const categories = Object.values(data.categories);
+  const categoryNames = categories.map(cat => cat.name);
+  const categoryAmounts = categories.map(cat => cat.amount);
+  const categoryColors = categories.map(cat => cat.color);
 
   // Chart data for Doughnut
   const doughnutData = {
-    labels: Object.keys(budgetData.categories),
+    labels: categoryNames,
     datasets: [
       {
-        data: Object.values(budgetData.categories),
-        backgroundColor: [
-          '#FF6384',
-          '#36A2EB',
-          '#FFCE56',
-          '#4BC0C0',
-          '#9966FF',
-        ],
-        hoverBackgroundColor: [
-          '#FF7A99',
-          '#58B0F0',
-          '#FFD96A',
-          '#6AD6D6',
-          '#B599FF',
-        ],
+        data: categoryAmounts,
+        backgroundColor: categoryColors,
+        hoverBackgroundColor: categoryColors.map(color => `${color}cc`),
       },
     ],
   };
 
   // Chart data for Bar
   const barData = {
-    labels: Object.keys(budgetData.categories),
+    labels: categoryNames,
     datasets: [
       {
         label: 'Amount Spent',
-        data: Object.values(budgetData.categories),
-        backgroundColor: '#36A2EB',
-        borderColor: '#1E88E5',
+        data: categoryAmounts,
+        backgroundColor: categoryColors,
+        borderColor: categoryColors,
         borderWidth: 2,
         borderRadius: 5,
       },
@@ -63,15 +45,39 @@ export const BudgetOverview = () => {
   return (
     <div className="expense-summary bg-light p-4 rounded shadow">
       <h2 className="text-center text-primary">Budget Overview</h2>
+      
+      <div className="mb-4">
+        <div className="d-flex justify-content-between">
+          <span>Total Budget: ${data.totalBudget.toLocaleString()}</span>
+          <span>Remaining: ${data.remaining.toLocaleString()}</span>
+        </div>
+        <div className="progress mt-2">
+          <div 
+            className="progress-bar" 
+            style={{ width: `${(data.spent / data.totalBudget) * 100}%` }}
+          ></div>
+        </div>
+      </div>
 
-      {/* Charts Section */}
       <div className="d-flex flex-wrap justify-content-center">
         <div className="chart-container flex-grow-1 mx-3" style={{ maxWidth: '300px', minWidth: '200px' }}>
-          <Doughnut data={doughnutData} options={{ responsive: true, plugins: { legend: { position: 'bottom' } } }} />
+          <Doughnut 
+            data={doughnutData} 
+            options={{ 
+              responsive: true, 
+              plugins: { legend: { position: 'bottom' } } 
+            }} 
+          />
         </div>
 
         <div className="chart-container flex-grow-1 mx-3" style={{ maxWidth: '300px', minWidth: '200px' }}>
-          <Bar data={barData} options={{ responsive: true, maintainAspectRatio: false }} />
+          <Bar 
+            data={barData} 
+            options={{ 
+              responsive: true, 
+              maintainAspectRatio: false 
+            }} 
+          />
         </div>
       </div>
     </div>

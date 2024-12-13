@@ -1,24 +1,12 @@
-// routes/dashboard.js
+// backend/routes/api/dashboard.js
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
+const dashboardController = require ('../../backend/controllers/dashboardController');
 
-router.get('/', auth, async (req, res) => {
-    try {
-        // Only accessible with valid token
-        res.json({
-            msg: "Authenticated Dashboard Access",
-            user: {
-                id: req.user.id,
-                accessTime: new Date().toISOString()
-            }
-        });
-    } catch (error) {
-        console.error('Dashboard route error:', error);
-        res.status(500).json({ 
-            msg: 'Server error in dashboard' 
-        });
-    }
-});
+// @route   GET api/dashboard
+// @desc    Get dashboard data
+// @access  Private
+router.get('/', auth, dashboardController.getDashboardData);
 
 module.exports = router;

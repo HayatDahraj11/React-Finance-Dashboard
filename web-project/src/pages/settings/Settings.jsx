@@ -1,31 +1,83 @@
-// src/pages/settings/Settings.jsx
-import React from 'react';
-import { NotificationSettings, ThemeSettings, ExportData } from '../../components/settings';
+import React, { useState } from 'react';
+import './settings.css';
+import Navbar from '../../../../src/pages/dashboard/Navbar';
 
 const Settings = () => {
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [theme, setTheme] = useState('light');
+  const [exportStatus, setExportStatus] = useState('');
+
+  // Toggle Notifications
+  const handleNotificationToggle = () => {
+    setNotificationsEnabled(!notificationsEnabled);
+  };
+
+  // Change Theme
+  const handleThemeChange = (selectedTheme) => {
+    setTheme(selectedTheme);
+    document.documentElement.setAttribute('data-theme', selectedTheme);
+  };
+
+  // Export Data
+  const handleExportData = () => {
+    setExportStatus('Exporting data...');
+    setTimeout(() => {
+      setExportStatus('Data exported successfully!');
+    }, 2000);
+  };
+
   return (
-    <div className="p-6">
-      <header className="mb-6">
-        <h1 className="text-2xl font-bold">Settings</h1>
+    <>
+    <Navbar />
+    <div className="settings-container">
+      <header className="settings-header">
+        <h1>Settings</h1>
       </header>
-      
-      <div className="space-y-6">
-        <section className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-xl font-semibold mb-4">Notifications</h2>
-          <NotificationSettings />
+
+      <div className="settings-section">
+        <section className="settings-card">
+          <h2>Notifications</h2>
+          <div className="settings-toggle">
+            <span>Enable Notifications</span>
+            <button
+              onClick={handleNotificationToggle}
+              className={`toggle-button ${notificationsEnabled ? 'enabled' : 'disabled'}`}
+            >
+              {notificationsEnabled ? 'ON' : 'OFF'}
+            </button>
+          </div>
         </section>
-        
-        <section className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-xl font-semibold mb-4">Appearance</h2>
-          <ThemeSettings />
+
+        <section className="settings-card">
+          <h2>Appearance</h2>
+          <div className="settings-theme-options">
+            <button
+              className={`theme-button ${theme === 'light' ? 'active' : ''}`}
+              onClick={() => handleThemeChange('light')}
+            >
+              Light Theme
+            </button>
+            <button
+              className={`theme-button ${theme === 'dark' ? 'active' : ''}`}
+              onClick={() => handleThemeChange('dark')}
+            >
+              Dark Theme
+            </button>
+          </div>
         </section>
-        
-        <section className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-xl font-semibold mb-4">Data Management</h2>
-          <ExportData />
+
+        <section className="settings-card">
+          <h2>Data Management</h2>
+          <div className="settings-data-management">
+            <button className="export-button" onClick={handleExportData}>
+              Export Data
+            </button>
+            {exportStatus && <p className="export-status">{exportStatus}</p>}
+          </div>
         </section>
       </div>
     </div>
+    </>
   );
 };
 

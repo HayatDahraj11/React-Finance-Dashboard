@@ -1,201 +1,98 @@
 // backend/controllers/api/categoryController.js
 const Category = require('../../models/Category');
-const Transaction = require('../../models/Transaction');
 
 const categoryController = {
+    // Get all categories for a user
+    getAll: async (req, res) => {
+        try {
+            const categories = await Category.find({ user: req.user.id });
+            res.json(categories);
+        } catch (error) {
+            console.error('Get categories error:', error);
+            res.status(500).json({ message: 'Error fetching categories' });
+        }
+    },
+
     // Create new category
     create: async (req, res) => {
         try {
             const { name, type, color } = req.body;
-
-            // Check if category already exists for user
-            const existingCategory = await Category.findOne({
-                user: req.user.id,
-                name: name.toLowerCase(),
-                type
-            });
-
-            if (existingCategory) {
-                return res.status(400).json({ msg: 'Category already exists' });
-            }
-
             const category = new Category({
-                name: name.toLowerCase(),
-                type,
-                color,
+                name,
+                type: type || 'expense',
+                color: color || '#000000',
                 user: req.user.id
             });
-
             await category.save();
-            res.json(category);
+            res.status(201).json(category);
         } catch (error) {
-            console.error('Category creation error:', error);
-            res.status(500).json({ msg: 'Server error' });
-        }
-    },
-
-    // Get all categories for a user
-    getAll: async (req, res) => {
-        try {
-            const { type } = req.query;
-            let query = { user: req.user.id };
-
-            if (type) {
-                query.type = type;
-            }
-
-            const categories = await Category.find(query).sort('name');
-            
-            // Get usage count for each category
-            const categoriesWithUsage = await Promise.all(
-                categories.map(async (category) => {
-                    const count = await Transaction.countDocuments({
-                        category: category._id,
-                        user: req.user.id
-                    });
-                    
-                    return {
-                        ...category.toObject(),
-                        usageCount: count
-                    };
-                })
-            );
-
-            res.json(categoriesWithUsage);
-        } catch (error) {
-            console.error('Get categories error:', error);
-            res.status(500).json({ msg: 'Server error' });
+            console.error('Create category error:', error);
+            res.status(500).json({ message: 'Error creating category' });
         }
     },
 
     // Update category
     update: async (req, res) => {
         try {
-            const { name, color } = req.body;
-
-            // Check if new name already exists
-            if (name) {
-                const existingCategory = await Category.findOne({
-                    user: req.user.id,
-                    name: name.toLowerCase(),
-                    _id: { $ne: req.params.id }
-                });
-
-                if (existingCategory) {
-                    return res.status(400).json({ msg: 'Category name already exists' });
-                }
-            }
-
+            const { name, type, color } = req.body;
             const category = await Category.findOneAndUpdate(
                 { _id: req.params.id, user: req.user.id },
-                { 
-                    ...(name && { name: name.toLowerCase() }),
-                    ...(color && { color })
-                },
+                { name, type, color },
                 { new: true }
             );
-
             if (!category) {
-                return res.status(404).json({ msg: 'Category not found' });
+                return res.status(404).json({ message: 'Category not found' });
             }
-
-            // Get usage count
-            const usageCount = await Transaction.countDocuments({
-                category: category._id,
-                user: req.user.id
-            });
-
-            res.json({
-                ...category.toObject(),
-                usageCount
-            });
+            res.json(category);
         } catch (error) {
             console.error('Update category error:', error);
-            res.status(500).json({ msg: 'Server error' });
+            res.status(500).json({ message: 'Error updating category' });
         }
     },
 
     // Delete category
     delete: async (req, res) => {
         try {
-            const category = await Category.findOne({
+            const category = await Category.findOneAndDelete({
                 _id: req.params.id,
                 user: req.user.id
             });
-
             if (!category) {
-                return res.status(404).json({ msg: 'Category not found' });
+                return res.status(404).json({ message: 'Category not found' });
             }
-
-            // Check if category is in use
-            const transactionCount = await Transaction.countDocuments({
-                category: category._id,
-                user: req.user.id
-            });
-
-            if (transactionCount > 0) {
-                return res.status(400).json({ 
-                    msg: 'Cannot delete category that is in use',
-                    transactionCount
-                });
-            }
-
-            await category.remove();
-            res.json({ msg: 'Category deleted' });
+            res.json({ message: 'Category deleted successfully' });
         } catch (error) {
             console.error('Delete category error:', error);
-            res.status(500).json({ msg: 'Server error' });
+            res.status(500).json({ message: 'Error deleting category' });
         }
     },
 
-    // Get category statistics
-    getStats: async (req, res) => {
+    // Create default categories for new user
+    createDefaultCategories: async (userId) => {
+        const defaultCategories = [
+            { name: 'Food', color: '#FF6384' },
+            { name: 'Entertainment', color: '#36A2EB' },
+            { name: 'Bills', color: '#FFCE56' },
+            { name: 'Transportation', color: '#4BC0C0' },
+            { name: 'Savings', color: '#9966FF' },
+            { name: 'Miscellaneous', color: '#FF9F40' }
+        ];
+
         try {
-            const { startDate, endDate } = req.query;
-            let dateMatch = {};
-
-            if (startDate && endDate) {
-                dateMatch = {
-                    date: {
-                        $gte: new Date(startDate),
-                        $lte: new Date(endDate)
-                    }
-                };
-            }
-
-            const stats = await Transaction.aggregate([
-                {
-                    $match: {
-                        user: req.user.id,
-                        ...dateMatch
-                    }
-                },
-                {
-                    $group: {
-                        _id: '$category',
-                        totalAmount: { $sum: '$amount' },
-                        count: { $sum: 1 },
-                        averageAmount: { $avg: '$amount' },
-                        transactions: { $push: '$$ROOT' }
-                    }
-                },
-                {
-                    $lookup: {
-                        from: 'categories',
-                        localField: '_id',
-                        foreignField: '_id',
-                        as: 'categoryDetails'
-                    }
-                },
-                {
-                    $unwind: '$categoryDetails'
-                }
-            ]);
-
-            res.json(stats);
+            const categories = await Promise.all(
+                defaultCategories.map(category => 
+                    Category.create({
+                        ...category,
+                        user: userId,
+                        isDefault: true,
+                        type: 'expense'
+                    })
+                )
+            );
+            return categories;
         } catch (error) {
-            console.error('Get category stats error:', error);
-            res.status(500).json({ msg: 'Server error' });
+            console.error('Error creating default categories:', error);
+            throw error;
         }
     }
 };

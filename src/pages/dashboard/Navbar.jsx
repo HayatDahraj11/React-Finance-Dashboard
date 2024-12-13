@@ -1,11 +1,9 @@
 // src/components/Navbar.jsx
-import React from 'react';
+import React, {useContext} from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 const Navbar = () => {
-  const location = useLocation(); // To highlight the active link
-
   return (
     <nav className="navbar navbar-expand-lg navbar-dark bg-dark shadow">
       <div className="container">
@@ -55,11 +53,9 @@ const Navbar = () => {
                 Settings
               </Link>
             </li>
-          </ul>
+</ul>
         </div>
       </div>
     </nav>
   );
-};
-
-export default Navbar;
+};export default Navbar;

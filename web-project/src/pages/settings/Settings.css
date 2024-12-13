@@ -1,0 +1,145 @@
+/* Updated settings.css for a professional and interactive look */
+
+:root {
+  --background-light: #f9f9f9;
+  --background-dark: #121212;
+  --card-light: #ffffff;
+  --card-dark: #1e1e1e;
+  --text-light: #000000;
+  --text-dark: #ffffff;
+  --primary: #4caf50;
+  --secondary: #ff5722;
+  --transition: all 0.3s ease;
+}
+
+[data-theme='dark'] {
+  --background-light: var(--background-dark);
+  --card-light: var(--card-dark);
+  --text-light: var(--text-dark);
+}
+
+body {
+  background-color: var(--background-light);
+  color: var(--text-light);
+  font-family: 'Arial', sans-serif;
+  margin: 0;
+  padding: 0;
+  transition: var(--transition);
+}
+
+.settings-container {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 1rem;
+  border-radius: 10px;
+  background-color: var(--card-light);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: var(--transition);
+}
+
+.settings-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.settings-header h1 {
+  font-size: 2.5rem;
+  font-weight: bold;
+}
+
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.settings-card {
+  padding: 1.5rem;
+  border-radius: 10px;
+  background-color: var(--card-light);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: var(--transition);
+}
+
+.settings-card h2 {
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+}
+
+.settings-toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.toggle-button {
+  padding: 0.5rem 1.5rem;
+  font-size: 1rem;
+  font-weight: bold;
+  border: none;
+  border-radius: 5px;
+  color: #ffffff;
+  background-color: var(--secondary);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.toggle-button.enabled {
+  background-color: var(--primary);
+}
+
+.toggle-button:hover {
+  opacity: 0.9;
+}
+
+.settings-theme-options {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.theme-button {
+  padding: 0.5rem 1.5rem;
+  font-size: 1rem;
+  font-weight: bold;
+  border: 2px solid transparent;
+  border-radius: 5px;
+  color: #ffffff;
+  background-color: var(--primary);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.theme-button.active {
+  border-color: var(--secondary);
+}
+
+.theme-button:hover {
+  opacity: 0.9;
+}
+
+.settings-data-management {
+  text-align: center;
+}
+
+.export-button {
+  padding: 0.7rem 2rem;
+  font-size: 1rem;
+  font-weight: bold;
+  border: none;
+  border-radius: 5px;
+  color: #ffffff;
+  background-color: var(--secondary);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.export-button:hover {
+  background-color: var(--primary);
+}
+
+.export-status {
+  margin-top: 1rem;
+  font-size: 1rem;
+  font-style: italic;
+}

@@ -5,18 +5,16 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const auth = require('../middleware/auth'); // Add this line
-
+const categoryController = require('../controllers/api/categoryController');
 // Register endpoint
+// Update auth.js registration endpoint to include category creation
 router.post('/register', async (req, res) => {
     try {
-        console.log('Registration attempt:', req.body.email);
-
         const { email, password } = req.body;
-
+        
         let user = await User.findOne({ email });
         if (user) {
-            console.log('User exists:', email);
-            return res.status(400).json({ msg: 'User already exists' });
+            return res.status(400).json({ message: 'User already exists' });
         }
 
         user = new User({
@@ -26,9 +24,10 @@ router.post('/register', async (req, res) => {
 
         const salt = await bcrypt.genSalt(10);
         user.password = await bcrypt.hash(password, salt);
-
         await user.save();
-        console.log('User saved:', email);
+
+        // Create default categories for the new user
+        await categoryController.createDefaultCategories(user.id);
 
         const payload = {
             user: {
@@ -42,16 +41,14 @@ router.post('/register', async (req, res) => {
             { expiresIn: '1h' },
             (err, token) => {
                 if (err) throw err;
-                console.log('Token generated for:', email);
                 res.json({ token });
             }
         );
     } catch (err) {
-        console.error('Registration error:', err.message);
-        res.status(500).json({ msg: 'Server error' });
+        console.error(err.message);
+        res.status(500).json({ message: 'Server error' });
     }
 });
-
 // Login endpoint
 router.post('/login', async (req, res) => {
     try {

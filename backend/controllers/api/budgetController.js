@@ -1,259 +1,249 @@
-// backend/controllers/api/budgetController.js
+// controllers/api/budgetController.js
 const Budget = require('../../models/Budget');
-const Transaction = require('../../models/Transaction');
 const Category = require('../../models/Category');
 
 const budgetController = {
-    // Create monthly budget
-    create: async (req, res) => {
-        try {
-            const { month, totalBudget, categories, alerts } = req.body;
+  // Create new budget
+  create: async (req, res) => {
+    try {
+      const { month, totalBudget, categories } = req.body;
 
-            // Verify all categories exist
-            for (const item of categories) {
-                const categoryExists = await Category.findOne({
-                    _id: item.category,
-                    user: req.user.id
-                });
-                if (!categoryExists) {
-                    return res.status(404).json({ 
-                        msg: 'Category not found',
-                        category: item.category 
-                    });
-                }
-            }
+      // Validate if budget already exists for this month
+      const existingBudget = await Budget.findOne({
+        user: req.user.id,
+        month: new Date(month)
+      });
 
-            // Check if budget already exists for this month
-            const existingBudget = await Budget.findOne({
-                user: req.user.id,
-                month: new Date(month)
-            });
+      if (existingBudget) {
+        return res.status(400).json({
+          message: 'Budget already exists for this month'
+        });
+      }
 
-            if (existingBudget) {
-                return res.status(400).json({ msg: 'Budget already exists for this month' });
-            }
+      // Validate categories
+      for (const category of categories) {
+        const categoryExists = await Category.findOne({
+          _id: category.category,
+          user: req.user.id
+        });
 
-            const budget = new Budget({
-                user: req.user.id,
-                month: new Date(month),
-                totalBudget,
-                categories,
-                alerts
-            });
-
-            await budget.save();
-            
-            // Populate category details
-            await budget.populate('categories.category', 'name color');
-            
-            res.json(budget);
-        } catch (error) {
-            console.error('Budget creation error:', error);
-            res.status(500).json({ msg: 'Server error' });
+        if (!categoryExists) {
+          return res.status(400).json({
+            message: `Category ${category.category} not found`
+          });
         }
-    },
+      }
 
-    // Get all budgets
-    getAll: async (req, res) => {
-        try {
-            const { startDate, endDate } = req.query;
-            let query = { user: req.user.id };
-
-            if (startDate && endDate) {
-                query.month = {
-                    $gte: new Date(startDate),
-                    $lte: new Date(endDate)
-                };
-            }
-
-            const budgets = await Budget.find(query)
-                .populate('categories.category', 'name color')
-                .sort({ month: -1 });
-
-            // Get actual spending for each budget
-            const budgetsWithSpending = await Promise.all(
-                budgets.map(async (budget) => {
-                    const startOfMonth = new Date(budget.month);
-                    const endOfMonth = new Date(budget.month);
-                    endOfMonth.setMonth(endOfMonth.getMonth() + 1);
-                    endOfMonth.setDate(0);
-
-                    const spending = await Transaction.aggregate([
-                        {
-                            $match: {
-                                user: req.user.id,
-                                date: {
-                                    $gte: startOfMonth,
-                                    $lte: endOfMonth
-                                },
-                                type: 'expense'
-                            }
-                        },
-                        {
-                            $group: {
-                                _id: '$category',
-                                totalSpent: { $sum: '$amount' }
-                            }
-                        }
-                    ]);
-
-                    const categoriesWithSpending = budget.categories.map(cat => {
-                        const categorySpending = spending.find(s => 
-                            s._id.toString() === cat.category._id.toString()
-                        );
-                        return {
-                            ...cat.toObject(),
-                            spent: categorySpending ? categorySpending.totalSpent : 0,
-                            remaining: cat.amount - (categorySpending ? categorySpending.totalSpent : 0)
-                        };
-                    });
-
-                    const totalSpent = spending.reduce((acc, curr) => acc + curr.totalSpent, 0);
-
-                    return {
-                        ...budget.toObject(),
-                        categories: categoriesWithSpending,
-                        totalSpent,
-                        remaining: budget.totalBudget - totalSpent
-                    };
-                })
-            );
-
-            res.json(budgetsWithSpending);
-        } catch (error) {
-            console.error('Get budgets error:', error);
-            res.status(500).json({ msg: 'Server error' });
+      const budget = new Budget({
+        user: req.user.id,
+        month: new Date(month),
+        totalBudget,
+        categories,
+        alerts: {
+          threshold: 80,
+          enabled: true
         }
-    },
+      });
 
-    // Get budget by month
-    getByMonth: async (req, res) => {
-        try {
-            const { month } = req.params;
-            const startOfMonth = new Date(month);
-            const endOfMonth = new Date(month);
-            endOfMonth.setMonth(endOfMonth.getMonth() + 1);
-            endOfMonth.setDate(0);
+      await budget.save();
 
-            const budget = await Budget.findOne({
-                user: req.user.id,
-                month: {
-                    $gte: startOfMonth,
-                    $lte: endOfMonth
-                }
-            }).populate('categories.category', 'name color');
+      const populatedBudget = await Budget.findById(budget._id)
+        .populate('categories.category');
 
-            if (!budget) {
-                return res.status(404).json({ msg: 'Budget not found for this month' });
-            }
-
-            // Get actual spending
-            const spending = await Transaction.aggregate([
-                {
-                    $match: {
-                        user: req.user.id,
-                        date: {
-                            $gte: startOfMonth,
-                            $lte: endOfMonth
-                        },
-                        type: 'expense'
-                    }
-                },
-                {
-                    $group: {
-                        _id: '$category',
-                        totalSpent: { $sum: '$amount' },
-                        transactions: { $push: '$$ROOT' }
-                    }
-                }
-            ]);
-
-            const categoriesWithSpending = budget.categories.map(cat => {
-                const categorySpending = spending.find(s => 
-                    s._id.toString() === cat.category._id.toString()
-                );
-                return {
-                    ...cat.toObject(),
-                    spent: categorySpending ? categorySpending.totalSpent : 0,
-                    remaining: cat.amount - (categorySpending ? categorySpending.totalSpent : 0),
-                    transactions: categorySpending ? categorySpending.transactions : []
-                };
-            });
-
-            const totalSpent = spending.reduce((acc, curr) => acc + curr.totalSpent, 0);
-
-            res.json({
-                ...budget.toObject(),
-                categories: categoriesWithSpending,
-                totalSpent,
-                remaining: budget.totalBudget - totalSpent
-            });
-        } catch (error) {
-            console.error('Get budget error:', error);
-            res.status(500).json({ msg: 'Server error' });
-        }
-    },
-
-    // Update budget
-    update: async (req, res) => {
-        try {
-            const { totalBudget, categories, alerts } = req.body;
-
-            // Verify all categories if provided
-            if (categories) {
-                for (const item of categories) {
-                    const categoryExists = await Category.findOne({
-                        _id: item.category,
-                        user: req.user.id
-                    });
-                    if (!categoryExists) {
-                        return res.status(404).json({ 
-                            msg: 'Category not found',
-                            category: item.category 
-                        });
-                    }
-                }
-            }
-
-            const budget = await Budget.findOneAndUpdate(
-                { _id: req.params.id, user: req.user.id },
-                { 
-                    ...(totalBudget && { totalBudget }),
-                    ...(categories && { categories }),
-                    ...(alerts && { alerts })
-                },
-                { new: true }
-            ).populate('categories.category', 'name color');
-
-            if (!budget) {
-                return res.status(404).json({ msg: 'Budget not found' });
-            }
-
-            res.json(budget);
-        } catch (error) {
-            console.error('Update budget error:', error);
-            res.status(500).json({ msg: 'Server error' });
-        }
-    },
-
-    // Delete budget
-    delete: async (req, res) => {
-        try {
-            const budget = await Budget.findOneAndDelete({
-                _id: req.params.id,
-                user: req.user.id
-            });
-
-            if (!budget) {
-                return res.status(404).json({ msg: 'Budget not found' });
-            }
-
-            res.json({ msg: 'Budget deleted' });
-        } catch (error) {
-            console.error('Delete budget error:', error);
-            res.status(500).json({ msg: 'Server error' });
-        }
+      res.status(201).json(populatedBudget);
+    } catch (error) {
+      console.error('Budget creation error:', error);
+      res.status(500).json({
+        message: 'Error creating budget'
+      });
     }
+  },
+
+  // Get all budgets for user
+  getAll: async (req, res) => {
+    try {
+      const budgets = await Budget.find({ user: req.user.id })
+        .populate('categories.category')
+        .sort({ month: -1 });
+
+      res.json(budgets);
+    } catch (error) {
+      console.error('Get budgets error:', error);
+      res.status(500).json({
+        message: 'Error fetching budgets'
+      });
+    }
+  },
+
+  // Get budget by month
+  getByMonth: async (req, res) => {
+    try {
+      const { month } = req.params;
+      const startDate = new Date(month);
+      const endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0);
+
+      const budget = await Budget.findOne({
+        user: req.user.id,
+        month: {
+          $gte: startDate,
+          $lte: endDate
+        }
+      }).populate('categories.category');
+
+      if (!budget) {
+        return res.status(404).json({
+          message: 'Budget not found for this month'
+        });
+      }
+
+      res.json(budget);
+    } catch (error) {
+      console.error('Get budget by month error:', error);
+      res.status(500).json({
+        message: 'Error fetching budget'
+      });
+    }
+  },
+
+  // Update budget
+  update: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { totalBudget, categories, alerts } = req.body;
+
+      const budget = await Budget.findOne({
+        _id: id,
+        user: req.user.id
+      });
+
+      if (!budget) {
+        return res.status(404).json({
+          message: 'Budget not found'
+        });
+      }
+
+      // Validate categories
+      if (categories) {
+        for (const category of categories) {
+          const categoryExists = await Category.findOne({
+            _id: category.category,
+            user: req.user.id
+          });
+
+          if (!categoryExists) {
+            return res.status(400).json({
+              message: `Category ${category.category} not found`
+            });
+          }
+        }
+      }
+
+      const updatedBudget = await Budget.findByIdAndUpdate(
+        id,
+        {
+          $set: {
+            totalBudget: totalBudget || budget.totalBudget,
+            categories: categories || budget.categories,
+            alerts: alerts || budget.alerts
+          }
+        },
+        { new: true }
+      ).populate('categories.category');
+
+      res.json(updatedBudget);
+    } catch (error) {
+      console.error('Update budget error:', error);
+      res.status(500).json({
+        message: 'Error updating budget'
+      });
+    }
+  },
+
+  // Delete budget
+  delete: async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      const budget = await Budget.findOne({
+        _id: id,
+        user: req.user.id
+      });
+
+      if (!budget) {
+        return res.status(404).json({
+          message: 'Budget not found'
+        });
+      }
+
+      await Budget.findByIdAndDelete(id);
+
+      res.json({
+        message: 'Budget deleted successfully'
+      });
+    } catch (error) {
+      console.error('Delete budget error:', error);
+      res.status(500).json({
+        message: 'Error deleting budget'
+      });
+    }
+  },
+
+  // Get budget analytics
+  getAnalytics: async (req, res) => {
+    try {
+      const { month } = req.query;
+      const startDate = new Date(month);
+      const endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0);
+
+      const budget = await Budget.findOne({
+        user: req.user.id,
+        month: {
+          $gte: startDate,
+          $lte: endDate
+        }
+      }).populate('categories.category');
+
+      if (!budget) {
+        return res.status(404).json({
+          message: 'Budget not found for this month'
+        });
+      }
+
+      // Calculate category-wise allocations
+      const categoryAllocations = budget.categories.map(cat => ({
+        name: cat.category.name,
+        amount: cat.amount,
+        percentage: (cat.amount / budget.totalBudget) * 100
+      }));
+
+      // Get historical budget data
+      const historicalBudgets = await Budget.find({
+        user: req.user.id,
+        month: { $lt: startDate }
+      })
+      .sort({ month: -1 })
+      .limit(6);
+
+      const budgetTrends = historicalBudgets.map(b => ({
+        month: b.month,
+        totalBudget: b.totalBudget
+      }));
+
+      res.json({
+        currentBudget: {
+          total: budget.totalBudget,
+          categoryAllocations
+        },
+        trends: budgetTrends,
+        alerts: budget.alerts
+      });
+    } catch (error) {
+      console.error('Budget analytics error:', error);
+      res.status(500).json({
+        message: 'Error fetching budget analytics'
+      });
+    }
+  }
 };
 
 module.exports = budgetController;

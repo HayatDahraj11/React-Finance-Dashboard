@@ -1,32 +1,32 @@
-// backend/routes/api/budget.js
+// routes/api/budget.js
 const express = require('express');
-const router = express.Router();
+const router = express.Router(); // Move this to the top
 const auth = require('../../middleware/auth');
 const budgetController = require('../../controllers/api/budgetController');
+const { check, validationResult } = require('express-validator');
 
-// @route   POST api/budget
-// @desc    Create new budget
-// @access  Private
-router.post('/', auth, budgetController.create);
+// Validation middleware
+const validateBudget = [
+  check('month', 'Month is required').not().isEmpty(),
+  check('totalBudget', 'Total budget must be a positive number').isFloat({ min: 0 }),
+  check('categories', 'Categories must be an array').isArray(),
+  check('categories.*.category', 'Category ID is required').not().isEmpty(),
+  check('categories.*.amount', 'Category amount must be a positive number').isFloat({ min: 0 }),
+  (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    next();
+  }
+];
 
-// @route   GET api/budget
-// @desc    Get all budgets
-// @access  Private
+// Routes
+router.post('/', [auth, validateBudget], budgetController.create);
 router.get('/', auth, budgetController.getAll);
-
-// @route   GET api/budget/:month
-// @desc    Get budget by month
-// @access  Private
+router.get('/analytics', auth, budgetController.getAnalytics); // Move this before :month route
 router.get('/:month', auth, budgetController.getByMonth);
-
-// @route   PUT api/budget/:id
-// @desc    Update budget
-// @access  Private
-router.put('/:id', auth, budgetController.update);
-
-// @route   DELETE api/budget/:id
-// @desc    Delete budget
-// @access  Private
+router.put('/:id', [auth, validateBudget], budgetController.update);
 router.delete('/:id', auth, budgetController.delete);
 
 module.exports = router;
