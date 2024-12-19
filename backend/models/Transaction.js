@@ -9,7 +9,8 @@ const transactionSchema = new mongoose.Schema({
     },
     amount: {
         type: Number,
-        required: true
+        required: true,
+        min: 0
     },
     type: {
         type: String,
@@ -30,12 +31,26 @@ const transactionSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     },
-    receiptImage: {
-        type: String,  // URL to image stored
-        default: null
+    notes: {
+        type: String,
+        trim: true
+    },
+    tags: [{
+        type: String,
+        trim: true
+    }],
+    status: {
+        type: String,
+        enum: ['completed', 'pending', 'cancelled'],
+        default: 'completed'
     }
 }, {
     timestamps: true
 });
+
+// Add indexes for better query performance
+transactionSchema.index({ user: 1, date: -1 });
+transactionSchema.index({ category: 1 });
+transactionSchema.index({ type: 1 });
 
 module.exports = mongoose.model('Transaction', transactionSchema);

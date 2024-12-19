@@ -3,45 +3,21 @@ const Transaction = require('../../models/Transaction');
 const Category = require('../../models/Category');
 
 const transactionController = {
-    // Create new transaction
-    create: async (req, res) => {
-        try {
-            const { amount, type, category, description, date } = req.body;
-            
-            // Verify category exists
-            const categoryExists = await Category.findById(category);
-            if (!categoryExists) {
-                return res.status(404).json({ msg: 'Category not found' });
-            }
-
-            const transaction = new Transaction({
-                user: req.user.id,
-                amount,
-                type,
-                category,
-                description,
-                date: date || Date.now()
-            });
-
-            await transaction.save();
-            
-            // Populate category details
-            await transaction.populate('category', 'name color');
-            
-            res.json(transaction);
-        } catch (error) {
-            console.error('Transaction creation error:', error);
-            res.status(500).json({ msg: 'Server error' });
-        }
-    },
-
-    // Get all transactions for a user
+    // Get all transactions
     getAll: async (req, res) => {
         try {
-            const { startDate, endDate, type, category } = req.query;
+            const {
+                startDate,
+                endDate,
+                category,
+                minAmount,
+                maxAmount,
+                type
+            } = req.query;
+
             let query = { user: req.user.id };
 
-            // Add date range filter if provided
+            // Add filters to query
             if (startDate && endDate) {
                 query.date = {
                     $gte: new Date(startDate),
@@ -49,14 +25,18 @@ const transactionController = {
                 };
             }
 
-            // Add type filter if provided
-            if (type) {
-                query.type = type;
-            }
-
-            // Add category filter if provided
             if (category) {
                 query.category = category;
+            }
+
+            if (minAmount || maxAmount) {
+                query.amount = {};
+                if (minAmount) query.amount.$gte = parseFloat(minAmount);
+                if (maxAmount) query.amount.$lte = parseFloat(maxAmount);
+            }
+
+            if (type) {
+                query.type = type;
             }
 
             const transactions = await Transaction.find(query)
@@ -66,26 +46,41 @@ const transactionController = {
             res.json(transactions);
         } catch (error) {
             console.error('Get transactions error:', error);
-            res.status(500).json({ msg: 'Server error' });
+            res.status(500).json({ message: 'Server error' });
         }
     },
 
-    // Get transaction by ID
-    getById: async (req, res) => {
+    // Create new transaction
+    create: async (req, res) => {
         try {
-            const transaction = await Transaction.findOne({
-                _id: req.params.id,
-                user: req.user.id
-            }).populate('category', 'name color');
+            const { amount, type, category, description, date } = req.body;
 
-            if (!transaction) {
-                return res.status(404).json({ msg: 'Transaction not found' });
+            // Verify category exists
+            const categoryExists = await Category.findOne({
+                _id: category,
+                user: req.user.id
+            });
+
+            if (!categoryExists) {
+                return res.status(404).json({ message: 'Category not found' });
             }
 
-            res.json(transaction);
+            const newTransaction = new Transaction({
+                user: req.user.id,
+                amount,
+                type,
+                category,
+                description,
+                date: date || Date.now()
+            });
+
+            await newTransaction.save();
+            await newTransaction.populate('category', 'name color');
+
+            res.status(201).json(newTransaction);
         } catch (error) {
-            console.error('Get transaction error:', error);
-            res.status(500).json({ msg: 'Server error' });
+            console.error('Create transaction error:', error);
+            res.status(500).json({ message: 'Server error' });
         }
     },
 
@@ -94,11 +89,14 @@ const transactionController = {
         try {
             const { amount, type, category, description, date } = req.body;
 
-            // Verify category if provided
             if (category) {
-                const categoryExists = await Category.findById(category);
+                const categoryExists = await Category.findOne({
+                    _id: category,
+                    user: req.user.id
+                });
+
                 if (!categoryExists) {
-                    return res.status(404).json({ msg: 'Category not found' });
+                    return res.status(404).json({ message: 'Category not found' });
                 }
             }
 
@@ -109,13 +107,13 @@ const transactionController = {
             ).populate('category', 'name color');
 
             if (!transaction) {
-                return res.status(404).json({ msg: 'Transaction not found' });
+                return res.status(404).json({ message: 'Transaction not found' });
             }
 
             res.json(transaction);
         } catch (error) {
             console.error('Update transaction error:', error);
-            res.status(500).json({ msg: 'Server error' });
+            res.status(500).json({ message: 'Server error' });
         }
     },
 
@@ -128,13 +126,13 @@ const transactionController = {
             });
 
             if (!transaction) {
-                return res.status(404).json({ msg: 'Transaction not found' });
+                return res.status(404).json({ message: 'Transaction not found' });
             }
 
-            res.json({ msg: 'Transaction deleted' });
+            res.json({ message: 'Transaction deleted' });
         } catch (error) {
             console.error('Delete transaction error:', error);
-            res.status(500).json({ msg: 'Server error' });
+            res.status(500).json({ message: 'Server error' });
         }
     },
 
@@ -142,8 +140,8 @@ const transactionController = {
     getSummary: async (req, res) => {
         try {
             const { startDate, endDate } = req.query;
+            
             let dateMatch = {};
-
             if (startDate && endDate) {
                 dateMatch = {
                     date: {
@@ -169,7 +167,7 @@ const transactionController = {
                 }
             ]);
 
-            const categorySummary = await Transaction.aggregate([
+            const categorySum = await Transaction.aggregate([
                 {
                     $match: {
                         user: req.user.id,
@@ -198,11 +196,11 @@ const transactionController = {
 
             res.json({
                 summary,
-                categorySummary
+                categorySum
             });
         } catch (error) {
             console.error('Get summary error:', error);
-            res.status(500).json({ msg: 'Server error' });
+            res.status(500).json({ message: 'Server error' });
         }
     }
 };
